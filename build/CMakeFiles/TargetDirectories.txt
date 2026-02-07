@@ -1,3 +1,0 @@
-D:/Projects/NESEMULATOR/build/CMakeFiles/nes.dir
-D:/Projects/NESEMULATOR/build/CMakeFiles/ALL_BUILD.dir
-D:/Projects/NESEMULATOR/build/CMakeFiles/ZERO_CHECK.dir
