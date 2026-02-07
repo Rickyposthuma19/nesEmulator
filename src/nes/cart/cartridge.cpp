@@ -8,7 +8,7 @@
 #include <cstddef>    // size_t
 
 namespace nes {
-    
+
 Cartridge::~Cartridge() = default;
 
 static bool readFileToBuffer(const std::string& path, std::vector<u8>& out) {
@@ -35,19 +35,28 @@ bool Cartridge::load(const std::string& path) {
   // --- 1) Basic iNES sanity checks ---
   if (file.size() < 16) return false;
 
-  // TODO: verify "NES\x1A"
-  // file[0]=='N', file[1]=='E', file[2]=='S', file[3]==0x1A
+  // verify "NES\x1A"
+  if (!((file[0]=='N') && (file[1]=='E') && (file[2]=='S') && (file[3]==0x1A))){
+    std::cerr << "Not a vaid iNES ROM\n";
+    return false;
+  }
+  std::cout << std::hex
+          << int(file[0]) << " "
+          << int(file[1]) << " "
+          << int(file[2]) << " "
+          << int(file[3]) << "\n";
 
   const u8 prgBanks = file[4];
   const u8 chrBanks = file[5];
   const u8 flags6   = file[6];
   const u8 flags7   = file[7];
 
-  // TODO: trainer flag (bit 2 of flags6)
+  // trainer flag (bit 2 of flags6)
   const bool hasTrainer = (flags6 & 0x04) != 0;
 
-  // TODO: mapper id = high nibble of flags7 + high nibble of flags6
-  mapper_id_ = 0;
+  auto mapperLow = (flags6 & 0xF0) >> 4;
+  auto mapperHigh = flags7 & 0xF0;
+  mapper_id_ = mapperHigh | mapperLow;
 
   // --- 2) Compute offsets and sizes ---
   std::size_t offset = 16;
@@ -56,7 +65,13 @@ bool Cartridge::load(const std::string& path) {
   const std::size_t prgSize = static_cast<std::size_t>(prgBanks) * 16384;
   const std::size_t chrSize = static_cast<std::size_t>(chrBanks) * 8192;
 
-  // TODO: bounds check: offset + prgSize + chrSize <= file.size()
+  if (offset > file.size() ||
+    prgSize > file.size() - offset ||
+    chrSize > file.size() - offset - prgSize) {
+  std::cerr << "ROM file too small for PRG/CHR data\n";
+  return false;
+  }
+
 
   // --- 3) Copy PRG/CHR into vectors ---
   prg_.assign(file.begin() + offset, file.begin() + offset + prgSize);

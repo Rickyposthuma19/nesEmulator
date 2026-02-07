@@ -15,8 +15,5 @@ int main(int argc, char** argv) {
 
   // TODO: read reset vector (0xFFFC low, 0xFFFD high) and print
   std::cout << "ROM loaded.\n";
-  std::size_t prgSizeBytes() const;
-  std::size_t chrSizeBytes() const;
-  u8 mapperId() const;
   return 0;
 }
