@@ -1,8 +1,8 @@
-#include "nes/mappers/mapper0.hpp"
+#include "nes/mapper0.hpp"
 
 namespace nes {
 
-Mapper0::Mapper0(const std::vector<u8>& prg, const std::vector<u8>& chr)
+Mapper0::Mapper0(const std::vector<u8>& prg_, const std::vector<u8>& chr_)
   : prg_(prg), chr_(chr) {
 
   // Mapper0 PRG is either 16KB or 32KB
@@ -18,14 +18,14 @@ u8 Mapper0::cpuRead(u16 addr) {
   std::size_t index = 0;
 
   if (mirror_16k_) {
-    // TODO: map $8000-$FFFF onto 0x0000-0x3FFF
-    // index = (addr - 0x8000) & 0x3FFF;
+    index = (addr - 0x8000) & 0x3FFF;
   } else {
-    // TODO: map $8000-$FFFF onto 0x0000-0x7FFF
-    // index = (addr - 0x8000);
+    index = (addr - 0x8000);
   }
 
-  // TODO: bounds safety (optional)
+  // bounds safety
+  if (index >= prs_.size()) return 0;
+
   return prg_[index];
 }
 
@@ -34,5 +34,32 @@ void Mapper0::cpuWrite(u16 addr, u8 value) {
   (void)value;
   // NROM PRG is ROM; usually ignore writes
 }
+
+u8 Mapper0::ppuRead(u16 addr) {
+// range check
+if (addr >= 0x2000) return 0;
+
+std::size_t index = addr;
+
+// sanity check
+if (index < chr_.size())
+    return chr_[index];
+else
+    return 0;
+}
+
+void Mapper0::ppuWrite(u16 addr, u8 value){
+// range check
+if (addr >= 0x2000) return 0;
+
+std::size_t index = addr;
+
+// only allow writes when cartridge uses CHR RAM
+if (chr_is_ram_ == false) 
+  return;
+
+chr_[index] = value;
+}
+
 
 }

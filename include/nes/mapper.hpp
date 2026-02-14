@@ -9,6 +9,9 @@ public:
 
   virtual u8  cpuRead(u16 addr) = 0;
   virtual void cpuWrite(u16 addr, u8 value) = 0;
+
+  virtual u8 ppuRead(u16 addr) = 0;
+  virtual void ppuWrite(u16 addr, u8 value) = 0;
 };
 
 }

@@ -51,12 +51,15 @@ bool Cartridge::load(const std::string& path) {
   const u8 flags6   = file[6];
   const u8 flags7   = file[7];
 
+  // flag to check CHR ROM or CHR RAM
+  chr_is_ram_ = (chrBanks == 0);
+
   // trainer flag (bit 2 of flags6)
   const bool hasTrainer = (flags6 & 0x04) != 0;
 
   auto mapperLow = (flags6 & 0xF0) >> 4;
   auto mapperHigh = flags7 & 0xF0;
-  mapper_id_ = mapperHigh | mapperLow;
+  mapper_id_ = static_cast<u8>(mapperHigh | mapperLow);
 
   // --- 2) Compute offsets and sizes ---
   std::size_t offset = 16;
@@ -92,7 +95,8 @@ bool Cartridge::load(const std::string& path) {
     return false;
   }
 
-  mapper_ = std::make_unique<Mapper0>(prg_, chr_);
+  mapper_ = std::make_unique<Mapper0>(prg_, chr_, chr_is_ram_);
+
   return true;
 }
 
@@ -104,6 +108,16 @@ u8 Cartridge::cpuRead(u16 addr) {
 void Cartridge::cpuWrite(u16 addr, u8 value) {
   if (!mapper_) return;
   mapper_->cpuWrite(addr, value);
+}
+
+u8 Cartridge::ppuRead(u16 addr) {
+  if (!mapper_) return 0;
+  return mapper_->ppuRead(addr);
+}
+
+void Cartridge::ppuWrite(u16 addr, u8 value) {
+  if (!mapper_) return;
+  mapper_->ppuWrite(addr, value);
 }
 
 }
