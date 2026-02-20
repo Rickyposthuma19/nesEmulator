@@ -9,7 +9,7 @@ namespace nes {
 
 class Mapper0 final : public Mapper {
 public:
-  Mapper0(std::vector<u8>& prg_, std::vector<u8>& chr_, bool chrIsRam);
+  Mapper0(std::vector<u8>& prg, std::vector<u8>& chr, bool chrIsRam);
 
   u8  cpuRead(u16 addr) override;
   void cpuWrite(u16 addr, u8 value) override;

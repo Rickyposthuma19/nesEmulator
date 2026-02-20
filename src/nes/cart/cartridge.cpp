@@ -1,5 +1,5 @@
 #include "nes/cartridge.hpp"
-#include "nes/mappers/mapper0.hpp"
+#include "nes/mapper0.hpp"
 #include "nes/mapper.hpp"
 
 #include <fstream>
@@ -40,16 +40,17 @@ bool Cartridge::load(const std::string& path) {
     std::cerr << "Not a vaid iNES ROM\n";
     return false;
   }
-  std::cout << std::hex
-          << int(file[0]) << " "
-          << int(file[1]) << " "
-          << int(file[2]) << " "
-          << int(file[3]) << "\n";
 
   const u8 prgBanks = file[4];
   const u8 chrBanks = file[5];
   const u8 flags6   = file[6];
   const u8 flags7   = file[7];
+
+  const bool isINES2 = ((flags7 & 0x0C) == 0x08);
+  if (isINES2) {
+    std::cerr << "iNES 2.0 not supported yet\n";
+    return false;
+  }
 
   // flag to check CHR ROM or CHR RAM
   chr_is_ram_ = (chrBanks == 0);
@@ -57,9 +58,10 @@ bool Cartridge::load(const std::string& path) {
   // trainer flag (bit 2 of flags6)
   const bool hasTrainer = (flags6 & 0x04) != 0;
 
-  auto mapperLow = (flags6 & 0xF0) >> 4;
-  auto mapperHigh = flags7 & 0xF0;
-  mapper_id_ = static_cast<u8>(mapperHigh | mapperLow);
+  const u8 mapperLow  = (flags6 >> 4) & 0x0F;
+  const u8 mapperHigh = (flags7 >> 4) & 0x0F;
+  mapper_id_ = (mapperHigh << 4) | mapperLow;
+
 
   // --- 2) Compute offsets and sizes ---
   std::size_t offset = 16;
@@ -102,6 +104,7 @@ bool Cartridge::load(const std::string& path) {
 
 u8 Cartridge::cpuRead(u16 addr) {
   if (!mapper_) return 0;
+  if (addr < 0x4020) return 0;     // cartridge region only
   return mapper_->cpuRead(addr);
 }
 
@@ -112,6 +115,8 @@ void Cartridge::cpuWrite(u16 addr, u8 value) {
 
 u8 Cartridge::ppuRead(u16 addr) {
   if (!mapper_) return 0;
+  addr &= 0x3FFF;                 // PPU bus is 14-bit
+  if (addr > 0x1FFF) return 0;     // cart CHR region only
   return mapper_->ppuRead(addr);
 }
 
